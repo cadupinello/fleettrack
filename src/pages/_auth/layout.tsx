@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import FleetTrackBackground from '../../assets/imgs/fleetTrackBackground.png';
 
 export const Route = createFileRoute('/_auth')({
   component: AuthLayout,
@@ -13,7 +14,7 @@ export function AuthLayout({
   return (
     <div className="min-h-screen">
       <div className={cn('flex flex-col gap-6', className)} {...props}>
-        <Card className="h-screen rounded-none border-0">
+        <Card className="h-screen rounded-none border-0 p-4">
           <CardContent className="grid h-full p-0 md:grid-cols-2">
             <div className="flex flex-col justify-center p-6 md:p-8">
               <div className="mx-auto w-full max-w-sm">
@@ -22,9 +23,9 @@ export function AuthLayout({
             </div>
             <div className="bg-muted relative hidden md:block">
               <img
-                src="https://images.unsplash.com/photo-1605379399642-870262d3d051?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
+                src={FleetTrackBackground}
                 alt="Autentica o"
-                className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                className="absolute inset-0 h-full w-full rounded-md object-cover dark:brightness-[0.2] dark:grayscale"
               />
             </div>
           </CardContent>

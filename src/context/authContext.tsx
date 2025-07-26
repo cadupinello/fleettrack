@@ -1,13 +1,11 @@
 'use client';
 
-import { useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
-  use,
   useCallback,
   useContext,
   useEffect,
-  useOptimistic,
   useState,
 } from 'react';
 
@@ -28,7 +26,7 @@ type AuthContextType = {
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -36,166 +34,166 @@ type AuthContextType = {
     role?: string
   ) => Promise<void>;
   clearError: () => void;
-  optimisticUser: IUser | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-type AuthProviderProps = {
-  children: React.ReactNode;
-};
+const API_BASE_URL = 'http://localhost:3001/api/auth';
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<IUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const [optimisticUser, setOptimisticUser] = useOptimistic<IUser | null>(user);
+  const clearError = useCallback(() => setError(null), []);
 
-  const navigate = useNavigate();
+  const saveSession = (token: string, user: IUser) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    setToken(token);
+    setUser(user);
+  };
 
-  useEffect(() => {
-    const loadAuthData = async () => {
-      try {
-        const [storedToken, storedUser] = await Promise.all([
-          localStorage.getItem('token'),
-          localStorage.getItem('user'),
-        ]);
-
-        if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-          setOptimisticUser(JSON.parse(storedUser));
-        }
-      } catch (err) {
-        console.error('Failed to load auth data', err);
-        await logout();
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAuthData();
-  }, []);
+  const removeSession = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+  };
 
   const login = useCallback(
     async (email: string, password: string) => {
       setIsLoading(true);
-      setError(null);
+      clearError();
 
       try {
-        setOptimisticUser({ id: 'temp', name: 'Carregando ...', email });
-
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch(`${API_BASE_URL}/login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
+          credentials: 'include',
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message);
+          throw new Error(data.message || 'Erro ao fazer login');
         }
 
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('token', data.token);
-
-        setOptimisticUser(data.user);
-
-        navigate({ to: '/dashboard' });
-      } catch (err) {
-        setOptimisticUser(null);
-        setError((err as Error).message);
+        saveSession(data.token, data.user);
+        queryClient.invalidateQueries();
+      } catch (err: any) {
+        setError(err.message ?? 'Erro desconhecido');
         throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [navigate, setOptimisticUser]
+    [queryClient]
   );
 
   const logout = useCallback(async () => {
     try {
-      setOptimisticUser(null);
-      await fetch('/api/auth/logout', {
+      await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST',
+        credentials: 'include',
       });
+    } catch (err) {
+      console.error('Erro ao fazer logout', err);
     } finally {
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      removeSession();
+      queryClient.clear();
     }
-  }, [navigate, setOptimisticUser]);
+  }, [queryClient]);
 
   const register = useCallback(
     async (name: string, email: string, password: string, role?: string) => {
       setIsLoading(true);
-      setError(null);
+      clearError();
 
       try {
-        setOptimisticUser({ id: 'temp', name, email });
-
-        const response = await fetch('/api/auth/register', {
+        const response = await fetch(`${API_BASE_URL}/register`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, password, role }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message);
+          throw new Error(data.message || 'Erro ao registrar');
         }
 
         await login(email, password);
-      } catch (err) {
-        setOptimisticUser(null);
-        setError((err as Error).message);
+      } catch (err: any) {
+        setError(err.message ?? 'Erro desconhecido');
         throw err;
       } finally {
         setIsLoading(false);
       }
     },
-    [login, setOptimisticUser]
+    [login]
   );
 
-  const clearError = useCallback(() => {
-    setError(null);
+  useEffect(() => {
+    const loadStoredSession = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+
+      if (storedToken && storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const response = await fetch(`${API_BASE_URL}/validate`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${storedToken}`,
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
+
+          if (!response.ok) {
+            throw new Error('Sessão inválida');
+          }
+
+          setToken(storedToken);
+          setUser(parsedUser);
+        } catch (err) {
+          removeSession();
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    loadStoredSession();
   }, []);
 
-  const value = {
-    user,
-    token,
-    isAuthenticated: !!user,
-    isLoading,
-    error,
-    login,
-    logout,
-    register,
-    clearError,
-    optimisticUser,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!user && !!token,
+        isLoading,
+        error,
+        login,
+        logout,
+        register,
+        clearError,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within a AuthProvider');
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de <AuthProvider>');
   }
   return context;
-}
-
-export function useAuthState() {
-  return use(AuthContext);
 }

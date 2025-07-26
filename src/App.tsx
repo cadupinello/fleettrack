@@ -1,3 +1,4 @@
+import { AuthProvider } from '@/context/authContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { routeTree } from './route-tree.gen';
@@ -12,9 +13,12 @@ declare module '@tanstack/react-router' {
 
 function App() {
   const query = new QueryClient();
+
   return (
     <QueryClientProvider client={query}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
