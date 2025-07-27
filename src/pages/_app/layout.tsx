@@ -1,3 +1,6 @@
+import { Header } from '@/components/header';
+import { AppSidebar } from '@/components/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app')({
@@ -6,8 +9,16 @@ export const Route = createFileRoute('/_app')({
 
 function LayoutDashboard() {
   return (
-    <div>
-      Hello "/_app"! <Outlet />
-    </div>
+    <SidebarProvider>
+      <div className="bg-background flex min-h-screen w-full">
+        <AppSidebar />
+        <main className="flex flex-1 flex-col">
+          <Header />
+          <div className="flex-1 p-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 }

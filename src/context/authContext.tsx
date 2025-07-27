@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import axios, { AxiosError } from 'axios';
 import {
   createContext,
   useCallback,
@@ -69,23 +70,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearError();
 
       try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include',
+        const response = await axios.post(`${API_BASE_URL}/login`, {
+          email,
+          password,
         });
 
-        const data = await response.json();
+        const { token: newToken, user: newUser } = response.data;
 
-        if (!response.ok) {
-          throw new Error(data.message || 'Erro ao fazer login');
-        }
-
-        saveSession(data.token, data.user);
+        saveSession(newToken, newUser);
         queryClient.invalidateQueries();
-      } catch (err: any) {
-        setError(err.message ?? 'Erro desconhecido');
+      } catch (err) {
+        const error = err as AxiosError;
+        console.error(error);
+        setError('Erro desconhecido');
         throw err;
       } finally {
         setIsLoading(false);
@@ -96,9 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include',
+      await axios.post(`${API_BASE_URL}/logout`, null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
     } catch (err) {
       console.error('Erro ao fazer logout', err);
@@ -106,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeSession();
       queryClient.clear();
     }
-  }, [queryClient]);
+  }, [queryClient, token]);
 
   const register = useCallback(
     async (name: string, email: string, password: string, role?: string) => {
@@ -114,21 +112,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearError();
 
       try {
-        const response = await fetch(`${API_BASE_URL}/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, role }),
+        const response = await axios.post(`${API_BASE_URL}/register`, {
+          name,
+          email,
+          password,
+          role,
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Erro ao registrar');
-        }
+        console.log(response.data);
 
         await login(email, password);
-      } catch (err: any) {
-        setError(err.message ?? 'Erro desconhecido');
+      } catch (err) {
+        const error = err as AxiosError;
+        console.error(error);
+        setError('Erro desconhecido');
         throw err;
       } finally {
         setIsLoading(false);
@@ -138,37 +135,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    const loadStoredSession = async () => {
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
 
-      if (storedToken && storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const response = await fetch(`${API_BASE_URL}/validate`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+    }
 
-          if (!response.ok) {
-            throw new Error('Sessão inválida');
-          }
-
-          setToken(storedToken);
-          setUser(parsedUser);
-        } catch (err) {
-          removeSession();
-        }
-      }
-
-      setIsLoading(false);
-    };
-
-    loadStoredSession();
+    setIsLoading(false);
   }, []);
 
   return (
