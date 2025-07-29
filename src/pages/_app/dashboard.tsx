@@ -1,9 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/dashboard')({
+  beforeLoad: async ({ context }) => {
+    const user = await context.authentication.refetchMe();
+    if (!user) throw redirect({ to: '/sign-in' });
+  },
   component: Dashboard,
 });
 

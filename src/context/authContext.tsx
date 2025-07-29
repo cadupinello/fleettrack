@@ -1,174 +1,71 @@
-'use client';
-
-import { useQueryClient } from '@tanstack/react-query';
-import axios, { AxiosError } from 'axios';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import { api } from '@/api/axios';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 interface IUser {
   id: string;
   name: string;
   email: string;
-  token?: string;
+  password?: string;
   role?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-type AuthContextType = {
+interface AuthContextType {
   user: IUser | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    role?: string
-  ) => Promise<void>;
-  clearError: () => void;
-};
+  logout: () => void;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+  refetchMe: () => Promise<IUser | null>;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext({} as AuthContextType);
 
-const API_BASE_URL = 'http://localhost:3001/api/auth';
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
-  const clearError = useCallback(() => setError(null), []);
-
-  const saveSession = (token: string, user: IUser) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(user));
-    setToken(token);
-    setUser(user);
-  };
-
-  const removeSession = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-  };
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      setIsLoading(true);
-      clearError();
-
-      try {
-        const response = await axios.post(`${API_BASE_URL}/login`, {
-          email,
-          password,
-        });
-
-        const { token: newToken, user: newUser } = response.data;
-
-        saveSession(newToken, newUser);
-        queryClient.invalidateQueries();
-      } catch (err) {
-        const error = err as AxiosError;
-        console.error(error);
-        setError('Erro desconhecido');
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [queryClient]
-  );
-
-  const logout = useCallback(async () => {
+  const refetchMe = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/logout`, null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    } catch (err) {
-      console.error('Erro ao fazer logout', err);
-    } finally {
-      removeSession();
-      queryClient.clear();
+      const response = await api.get('auth/me');
+      setUser(response.data);
+      return response.data;
+    } catch (error) {
+      setUser(null);
+      return null;
     }
-  }, [queryClient, token]);
-
-  const register = useCallback(
-    async (name: string, email: string, password: string, role?: string) => {
-      setIsLoading(true);
-      clearError();
-
-      try {
-        const response = await axios.post(`${API_BASE_URL}/register`, {
-          name,
-          email,
-          password,
-          role,
-        });
-
-        console.log(response.data);
-
-        await login(email, password);
-      } catch (err) {
-        const error = err as AxiosError;
-        console.error(error);
-        setError('Erro desconhecido');
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [login]
-  );
+  };
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-
-    setIsLoading(false);
+    refetchMe().finally(() => setIsLoading(false));
   }, []);
+
+  const login = async (email: string, password: string) => {
+    await api.post('auth/login', { email, password });
+    await refetchMe();
+  };
+
+  const logout = async () => {
+    await api.post('auth/logout');
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isAuthenticated: !!user && !!token,
-        isLoading,
-        error,
         login,
         logout,
-        register,
-        clearError,
+        refetchMe,
+        isLoading,
+        register: async (name, email, password) => {
+          await api.post('/register', { name, email, password });
+          await refetchMe();
+        },
       }}
     >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth deve ser usado dentro de <AuthProvider>');
-  }
-  return context;
-}
+export const useAuth = () => useContext(AuthContext);

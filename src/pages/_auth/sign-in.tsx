@@ -3,10 +3,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/authContext';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_auth/sign-in')({
+  beforeLoad: async ({ context }) => {
+    const user = await context.authentication.refetchMe();
+    if (user) throw redirect({ to: '/dashboard' });
+  },
   component: SignIn,
   head: () => ({
     meta: [{ title: 'Entrar - FleetTrack' }],
@@ -14,7 +17,7 @@ export const Route = createFileRoute('/_auth/sign-in')({
 });
 
 function SignIn() {
-  const { login, error, clearError, isAuthenticated } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const mutation = useMutation({
@@ -25,16 +28,15 @@ function SignIn() {
       email: string;
       password: string;
     }) => {
-      clearError();
       return await login(email, password);
     },
-  });
-
-  useEffect(() => {
-    if (isAuthenticated) {
+    onSuccess: () => {
       navigate({ to: '/dashboard' });
-    }
-  }, [isAuthenticated, navigate]);
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+  });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,8 +67,6 @@ function SignIn() {
           disabled={mutation.isPending}
         />
       </div>
-
-      {error && <p className="text-red-500">{error}</p>}
 
       <div className="grid gap-2">
         <div className="flex items-center">
