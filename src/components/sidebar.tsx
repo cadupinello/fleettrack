@@ -1,16 +1,32 @@
+import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Link } from '@tanstack/react-router';
-import { LayoutDashboard, MapPin, Users } from 'lucide-react';
+import {
+  Bell,
+  LayoutDashboard,
+  MapPin,
+  Settings,
+  User,
+  Users,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 const navItems = [
   { title: 'Painel', url: '/dashboard', icon: LayoutDashboard },
@@ -58,6 +74,43 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="bg-card">
+        <div className="border-border rounded-md border p-1">
+          <div
+            className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'justify-between'}`}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={`${collapsed ? 'h-8 w-8 p-0' : 'h-8 justify-start gap-3'}`}
+                >
+                  <div className="bg-foreground flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
+                    <User className="h-3 w-3 text-zinc-50" />
+                  </div>
+                  {!collapsed && (
+                    <span className="text-foreground text-sm font-medium">
+                      Usuário Admin
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurações
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notificações
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <SidebarTrigger />
+          </div>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
