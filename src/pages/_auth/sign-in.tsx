@@ -1,15 +1,26 @@
+import { useLogin } from '@/api/mutations/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/authContext';
-import { useMutation } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { EyeIcon, EyeOffIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+const signInSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'A senha precisa ter no mínimo 6 caracteres'),
+});
+
+type SignInFormValues = z.infer<typeof signInSchema>;
 
 export const Route = createFileRoute('/_auth/sign-in')({
   beforeLoad: async ({ context }) => {
-    const user = await context.authentication.refetchMe();
+    const user =
+      context.authentication.user ?? (await context.authentication.refetchMe());
+
     if (user) throw redirect({ to: '/dashboard' });
   },
   component: SignIn,
@@ -19,41 +30,28 @@ export const Route = createFileRoute('/_auth/sign-in')({
 });
 
 function SignIn() {
-  const { login } = useAuth();
   const navigate = useNavigate();
-  const [isVisible, setIsVisible] = useState<boolean>(false);
 
-  const toggleVisibility = () => setIsVisible((prevState) => !prevState);
+  const { mutate: loginMutation, isPending } = useLogin();
 
-  const mutation = useMutation({
-    mutationFn: async ({
-      email,
-      password,
-    }: {
-      email: string;
-      password: string;
-    }) => {
-      return await login(email, password);
-    },
-    onSuccess: () => {
-      navigate({ to: '/dashboard' });
-    },
-    onError: (error) => {
-      console.log(error);
-    },
+  const [isVisible, setIsVisible] = useState(false);
+
+  const toggleVisibility = () => setIsVisible((prev) => !prev);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
   });
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    mutation.mutate({ email, password });
+  const onSubmit = (data: SignInFormValues) => {
+    loginMutation(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <div className="flex flex-col items-center text-center">
         <h1 className="text-2xl font-bold">Acesse sua conta</h1>
         <p className="text-muted-foreground text-balance">
@@ -62,49 +60,52 @@ function SignIn() {
       </div>
 
       <div className="grid gap-2">
-        <div className="*:not-first:mt-2">
-          <Label>Email</Label>
-          <div className="relative">
-            <Input
-              className="peer pe-9"
-              placeholder="Email"
-              type="email"
-              disabled={mutation.isPending}
-            />
-            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-3 peer-disabled:opacity-50">
-              <MailIcon size={16} aria-hidden="true" />
-            </div>
+        <Label htmlFor="email">Email</Label>
+        <div className="relative">
+          <Input
+            id="email"
+            type="email"
+            placeholder="Email"
+            className="peer pe-9"
+            disabled={isSubmitting || isPending}
+            {...register('email')}
+          />
+          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 end-0 flex items-center justify-center pe-3 peer-disabled:opacity-50">
+            <MailIcon size={16} />
           </div>
         </div>
+        {errors.email && (
+          <span className="text-sm text-red-500">{errors.email.message}</span>
+        )}
       </div>
 
       <div className="grid gap-2">
-        <div className="*:not-first:mt-2">
-          <Label>Senha</Label>
-
-          <div className="relative">
-            <Input
-              className="pe-9"
-              placeholder="Senha"
-              type={isVisible ? 'text' : 'password'}
-              disabled={mutation.isPending}
-            />
-            <button
-              className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-              type="button"
-              onClick={toggleVisibility}
-              aria-label={isVisible ? 'Hide password' : 'Show password'}
-              aria-pressed={isVisible}
-              aria-controls="password"
-            >
-              {isVisible ? (
-                <EyeOffIcon size={16} aria-hidden="true" />
-              ) : (
-                <EyeIcon size={16} aria-hidden="true" />
-              )}
-            </button>
-          </div>
+        <Label htmlFor="password">Senha</Label>
+        <div className="relative">
+          <Input
+            id="password"
+            type={isVisible ? 'text' : 'password'}
+            placeholder="Senha"
+            className="pe-9"
+            disabled={isSubmitting || isPending}
+            {...register('password')}
+          />
+          <button
+            type="button"
+            onClick={toggleVisibility}
+            className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={isVisible ? 'Esconder senha' : 'Mostrar senha'}
+            aria-pressed={isVisible}
+            aria-controls="password"
+          >
+            {isVisible ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+          </button>
         </div>
+        {errors.password && (
+          <span className="text-sm text-red-500">
+            {errors.password.message}
+          </span>
+        )}
       </div>
 
       <a
@@ -114,8 +115,12 @@ function SignIn() {
         Esqueceu sua senha?
       </a>
 
-      <Button type="submit" className="w-full" disabled={mutation.isPending}>
-        {mutation.isPending ? 'Entrando...' : 'Entrar'}
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting || isPending}
+      >
+        {isPending ? 'Entrando...' : 'Entrar'}
       </Button>
 
       <div className="text-center text-sm">

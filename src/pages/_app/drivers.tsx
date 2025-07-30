@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -21,6 +20,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_app/drivers')({
@@ -104,10 +111,9 @@ function DriversComponent() {
         </Button>
       </div>
 
-      {/* Pesquisa e Filtros */}
       <div className="flex gap-4">
-        <div className="relative w-md">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+        <div className="relative w-full max-w-md">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <Input
             placeholder="Buscar motoristas por nome, e-mail ou veículo..."
             className="pl-10"
@@ -116,62 +122,76 @@ function DriversComponent() {
         <Button variant="outline">Filtrar</Button>
       </div>
 
-      {/* Grade de Motoristas */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {drivers.map((driver) => (
-          <Card
-            key={driver.id}
-            className="shadow-soft hover:shadow-medium transition-shadow"
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{driver.name}</CardTitle>
-                  <Badge
-                    variant={getStatusVariant(driver.status)}
-                    className="mt-1"
-                  >
-                    {driver.status}
-                  </Badge>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[160px]">Nome</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="min-w-[220px]">Email</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Veículo</TableHead>
+            <TableHead className="min-w-[180px]">Localização</TableHead>
+            <TableHead className="text-nowrap">Última atualização</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {drivers.map((driver) => (
+            <TableRow key={driver.id}>
+              <TableCell className="font-medium">{driver.name}</TableCell>
+              <TableCell>
+                <Badge variant={getStatusVariant(driver.status)}>
+                  {driver.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex max-w-[200px] items-center gap-2 truncate">
+                  <Mail className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <span className="truncate">{driver.email}</span>
                 </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Phone className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <span>{driver.phone}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Car className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <span>{driver.vehicle}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex max-w-[160px] items-center gap-2 truncate">
+                  <MapPin className="text-muted-foreground h-4 w-4 shrink-0" />
+                  <span className="truncate">{driver.location}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="text-muted-foreground text-xs">
+                  {driver.lastUpdate}
+                </span>
+              </TableCell>
+              <TableCell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem>Editar motorista</DropdownMenuItem>
                     <DropdownMenuItem>Ver rota</DropdownMenuItem>
                     <DropdownMenuItem>Contato</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="text-muted-foreground h-4 w-4" />
-                <span className="truncate">{driver.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="text-muted-foreground h-4 w-4" />
-                <span>{driver.phone}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Car className="text-muted-foreground h-4 w-4" />
-                <span>{driver.vehicle}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="text-muted-foreground h-4 w-4" />
-                <span className="truncate">{driver.location}</span>
-              </div>
-              <div className="text-muted-foreground pt-2 text-xs">
-                Última atualização: {driver.lastUpdate}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
       <DriverRegister open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </div>
   );

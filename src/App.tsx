@@ -21,6 +21,8 @@ declare module '@tanstack/react-router' {
 function InnerApp() {
   const auth = useAuth();
 
+  if (auth.isLoading) return null;
+
   const routerWithAuth = createRouter({
     routeTree,
     context: {

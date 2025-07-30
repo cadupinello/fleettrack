@@ -1,3 +1,6 @@
+import { useAuth } from "@/context/authContext";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { api } from "../axios";
 
 type TAuth = {
@@ -7,22 +10,65 @@ type TAuth = {
   role?: string;
 }
 
-export const loginMutation = async ({ email, password }: Pick<TAuth, 'email' | 'password'>)  => {
-  const response = await api.post('auth/login', { email, password });
-  return response.data;
+export const useLogin = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ email, password }: Pick<TAuth, 'email' | 'password'>) => {
+      return await login(email, password);
+    },
+    onSuccess: () => {
+      navigate({ to: '/dashboard' });
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 }
 
-export const registerMutation = async ({ name, email, password, role }: TAuth) => {
-  const response = await api.post('auth/register', { name, email, password, role });
-  return response.data;
+export const useRegister = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async ({ name, email, password, role }: TAuth) => {
+      return await api.post('auth/register', { name, email, password, role })
+        .then((response) => response.data);
+    },
+    onSuccess: () => {
+      navigate({ to: '/sign-in' });
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 }
 
-export const logoutMutation = async () => {
-  const response = await api.post('auth/logout');
-  return response.data;
+export const useLogout = () => {
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async () => {
+      return await api.post('auth/logout')
+        .then((response) => response.data);
+    },
+    onSuccess: () => {
+      navigate({ to: '/sign-in' });
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 }
 
-export const refreshMutation = async () => {
-  const response = await api.post('auth/refresh-token');
-  return response.data;
+export const useRefresh = () => {
+  return useMutation({
+    mutationFn: async () => {
+      return await api.post('auth/refresh-token')
+        .then((response) => response.data);
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 }

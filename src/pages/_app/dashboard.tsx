@@ -5,7 +5,9 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/dashboard')({
   beforeLoad: async ({ context }) => {
-    const user = await context.authentication.refetchMe();
+    const user =
+      context.authentication.user ?? (await context.authentication.refetchMe());
+
     if (!user) throw redirect({ to: '/sign-in' });
   },
   component: Dashboard,
@@ -80,7 +82,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Grade de Estatísticas */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {estatisticas.map((stat, index) => (
             <Card key={index} className="shadow-soft">
@@ -88,7 +89,6 @@ function Dashboard() {
                 <CardTitle className="text-sm font-medium">
                   {stat.title}
                 </CardTitle>
-                {/* <stat.icon className="h-5 w-5 text-muted-foreground" /> */}
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -101,11 +101,9 @@ function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Atividades Recentes */}
           <Card className="shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {/* <Activity className="h-5 w-5" /> */}
                 Atividades Recentes
               </CardTitle>
             </CardHeader>
