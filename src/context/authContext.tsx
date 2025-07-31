@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react';
 
-interface IUser {
+export interface IUser {
   id: string;
   name: string;
   email: string;
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const refetchMe = useCallback(async (): Promise<IUser | null> => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data);
+      setUser(response.data.user);
       return response.data;
     } catch (error) {
       setUser(null);

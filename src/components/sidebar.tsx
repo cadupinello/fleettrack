@@ -12,6 +12,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import type { IUser } from '@/context/authContext';
 import { Link } from '@tanstack/react-router';
 import {
   Bell,
@@ -34,7 +35,7 @@ const navItems = [
   { title: 'Mapa em Tempo Real', url: '/maps', icon: MapPin },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ user }: { user: IUser | null }) {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -90,16 +91,22 @@ export function AppSidebar() {
                     <User className="h-3 w-3 text-zinc-50" />
                   </div>
                   {!collapsed && (
-                    <span className="text-foreground text-sm font-medium">
-                      Usuário Admin
+                    <span className="text-foreground text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {user?.name}
                     </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configurações
+                  <Link
+                    to={'/settings/profile/$userId'}
+                    params={{ userId: String(user?.id) }}
+                    className="flex items-center"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Configurações
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Bell className="mr-2 h-4 w-4" />

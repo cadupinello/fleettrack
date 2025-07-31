@@ -4,11 +4,13 @@ import {
   Outlet,
 } from '@tanstack/react-router';
 
-type RouterContext = {
-  authentication: AuthContext;
-};
+import { useAuth } from '@/context/authContext';
+import { QueryClient } from '@tanstack/react-query';
 
-export const Route = createRootRouteWithContext<RouterContext>()({
+export const Route = createRootRouteWithContext<{
+  authentication: ReturnType<typeof useAuth>;
+  queryClient: QueryClient;
+}>()({
   component: RootComponent,
 });
 
