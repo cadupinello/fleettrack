@@ -24,17 +24,17 @@ export function AuthLayout({
             <div className="bg-muted relative hidden md:block">
               <img
                 src={FleetTrackBackground}
-                alt="Autentica o"
+                alt="FleetTrack Background"
                 className="absolute inset-0 h-full w-full rounded-md object-cover dark:brightness-[0.2] dark:grayscale"
               />
             </div>
           </CardContent>
+          <div className="text-muted-foreground hover:[&_a]:text-primary text-center text-xs text-balance [&_a]:underline [&_a]:underline-offset-4">
+            Ao clicar em continuar, você concorda com os{' '}
+            <a href="#">Termos de Serviço</a> e{' '}
+            <a href="#">Politica de Privacidade</a>.
+          </div>
         </Card>
-        <div className="text-muted-foreground hover:[&_a]:text-primary text-center text-xs text-balance [&_a]:underline [&_a]:underline-offset-4">
-          Ao clicar em continuar, você concorda com os{' '}
-          <a href="#">Termos de Serviço</a> e{' '}
-          <a href="#">Politica de Privacidade</a>.
-        </div>
       </div>
     </div>
   );
