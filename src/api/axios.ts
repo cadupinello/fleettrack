@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'nookies';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://localhost:3000/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -18,4 +18,3 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-

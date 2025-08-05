@@ -12,13 +12,15 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
-import type { IUser } from '@/context/authContext';
+import { useAuth, type IUser } from '@/context/authContext';
 import { Link } from '@tanstack/react-router';
 import {
   Bell,
   LayoutDashboard,
+  LogOut,
   MapPin,
   Settings,
+  Truck,
   User,
   Users,
 } from 'lucide-react';
@@ -32,11 +34,13 @@ import {
 const navItems = [
   { title: 'Painel', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Motoristas', url: '/drivers', icon: Users },
+  { title: 'Viagens', url: '/trips', icon: Truck },
   { title: 'Mapa em Tempo Real', url: '/maps', icon: MapPin },
 ];
 
 export function AppSidebar({ user }: { user: IUser | null }) {
   const { state } = useSidebar();
+  const { logout } = useAuth();
   const collapsed = state === 'collapsed';
 
   return (
@@ -99,6 +103,10 @@ export function AppSidebar({ user }: { user: IUser | null }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 <DropdownMenuItem>
+                  <Bell className="mr-2 h-4 w-4" />
+                  Notificações
+                </DropdownMenuItem>
+                <DropdownMenuItem>
                   <Link
                     to={'/settings/profile/$userId'}
                     params={{ userId: String(user?.id) }}
@@ -108,9 +116,14 @@ export function AppSidebar({ user }: { user: IUser | null }) {
                     Configurações
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Bell className="mr-2 h-4 w-4" />
-                  Notificações
+                <DropdownMenuItem
+                  onClick={() => {
+                    logout();
+                    window.location.reload();
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4 text-red-600" />
+                  Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
