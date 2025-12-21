@@ -16,7 +16,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const router = createRouter({
   routeTree,
@@ -29,29 +36,27 @@ const router = createRouter({
   scrollRestoration: true,
 });
 
-function App() {
+function AppRouter() {
   const auth = useAuth();
 
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider
-          router={router}
-          defaultPreload="intent"
-          context={{
-            authentication: auth,
-            queryClient,
-          }}
-        />
-      </QueryClientProvider>
-    </>
+    <RouterProvider
+      router={router}
+      defaultPreload="intent"
+      context={{
+        authentication: auth,
+        queryClient,
+      }}
+    />
   );
 }
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </QueryClientProvider>
   </StrictMode>
 );

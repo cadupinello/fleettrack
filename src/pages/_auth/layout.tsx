@@ -32,7 +32,7 @@ export function AuthLayout({
           <div className="text-muted-foreground hover:[&_a]:text-primary text-center text-xs text-balance [&_a]:underline [&_a]:underline-offset-4">
             Ao clicar em continuar, você concorda com os{' '}
             <a href="#">Termos de Serviço</a> e{' '}
-            <a href="#">Politica de Privacidade</a>.
+            <a href="#">Política de Privacidade</a>.
           </div>
         </Card>
       </div>

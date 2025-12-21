@@ -1,47 +1,51 @@
 import { Button } from '@/components/ui/button';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarTrigger,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth, type IUser } from '@/context/authContext';
 import { Link } from '@tanstack/react-router';
 import {
-  Bell,
-  LayoutDashboard,
-  LogOut,
-  MapPin,
-  Settings,
-  Truck,
-  User,
-  Users,
+    Bell,
+    LayoutDashboard,
+    LogOut,
+    MapPin,
+    Settings,
+    Truck,
+    User,
+    Users,
 } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 
 const navItems = [
-  { title: 'Painel', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Motoristas', url: '/drivers', icon: Users },
-  { title: 'Viagens', url: '/trips', icon: Truck },
-  { title: 'Mapa em Tempo Real', url: '/maps', icon: MapPin },
+  { title: 'Painel', url: '/dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER', 'USER'] },
+  { title: 'Motoristas', url: '/drivers', icon: Users, roles: ['ADMIN', 'MANAGER'] },
+  { title: 'Viagens', url: '/trips', icon: Truck, roles: ['ADMIN', 'MANAGER'] },
+  { title: 'Mapa em Tempo Real', url: '/maps', icon: MapPin, roles: ['ADMIN', 'MANAGER', 'USER'] },
 ];
 
 export function AppSidebar({ user }: { user: IUser | null }) {
   const { state } = useSidebar();
-  const { logout } = useAuth();
+  const { logout, hasRole } = useAuth();
   const collapsed = state === 'collapsed';
+
+  const filteredNavItems = navItems.filter(item => 
+    hasRole(item.roles as any)
+  );
 
   return (
     <Sidebar className={collapsed ? 'w-14' : 'w-64'} collapsible="icon">
@@ -65,7 +69,7 @@ export function AppSidebar({ user }: { user: IUser | null }) {
           <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link to={item.url}>
@@ -119,7 +123,6 @@ export function AppSidebar({ user }: { user: IUser | null }) {
                 <DropdownMenuItem
                   onClick={() => {
                     logout();
-                    window.location.reload();
                   }}
                 >
                   <LogOut className="mr-2 h-4 w-4 text-red-600" />

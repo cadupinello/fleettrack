@@ -1,7 +1,6 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 import { MoreHorizontal, Phone, Plus, Search } from 'lucide-react';
 
@@ -21,28 +20,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useAuth } from '@/context/authContext';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_app/drivers')({
+  beforeLoad: ({ context }) => {
+    if (!context.authentication.hasRole(['ADMIN', 'MANAGER'])) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
   component: DriversComponent,
 });
 
 function DriversComponent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { drivers, isLoading } = useGetAllDrivers();
+  const [page, setPage] = useState(1);
+  const { drivers, pagination, isLoading } = useGetAllDrivers(page);
+  const { isAdmin } = useAuth();
 
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case 'Ativo':
-        return 'default';
-      case 'Em pausa':
-        return 'secondary';
-      case 'Fora de serviço':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
 
   console.log(drivers);
   return (
@@ -54,13 +49,15 @@ function DriversComponent() {
             Gerencie sua equipe de motoristas
           </p>
         </div>
-        <Button
-          className="bg-foreground hover:opacity-90"
-          onClick={() => setIsDialogOpen(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Adicionar motorista
-        </Button>
+        {isAdmin && (
+          <Button
+            className="bg-foreground hover:opacity-90"
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Adicionar motorista
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -82,7 +79,8 @@ function DriversComponent() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Telefone</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>CNH</TableHead>
+              <TableHead>Veículo Atual</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -97,9 +95,20 @@ function DriversComponent() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={getStatusVariant(driver.status)}>
-                    {driver.status}
-                  </Badge>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{driver.licenseNumber}</span>
+                    <span className="text-muted-foreground text-xs uppercase">Categoria {driver.licenseType}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {driver.vehicles?.length > 0 ? (
+                    <div className="flex flex-col">
+                      <span className="font-medium text-xs bg-muted px-2 py-0.5 rounded w-fit">{driver.vehicles[0].plate}</span>
+                      <span className="text-muted-foreground text-xs">{driver.vehicles[0].model}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">Sem veículo</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -119,6 +128,30 @@ function DriversComponent() {
             ))}
           </TableBody>
         </Table>
+      )}
+
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-end gap-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1 || isLoading}
+          >
+            Anterior
+          </Button>
+          <div className="text-sm font-medium">
+            Página {page} de {pagination.totalPages}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+            disabled={page === pagination.totalPages || isLoading}
+          >
+            Próxima
+          </Button>
+        </div>
       )}
 
       <DriverRegister open={isDialogOpen} onOpenChange={setIsDialogOpen} />

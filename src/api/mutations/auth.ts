@@ -1,28 +1,21 @@
 import { useAuth } from "@/context/authContext";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { api } from "../axios";
-
-type TAuth = {
-  name: string;
-  email: string;
-  password: string;
-  role?: string;
-}
+import { authService, type LoginCredentials, type RegisterCredentials } from "../services/auth";
 
 export const useLogin = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ email, password }: Pick<TAuth, 'email' | 'password'>) => {
-      return await login(email, password);
+    mutationFn: async (credentials: LoginCredentials) => {
+      return await login(credentials);
     },
     onSuccess: () => {
       navigate({ to: '/dashboard' });
     },
     onError: (error) => {
-      console.error(error);
+      console.error('Login error:', error);
     },
   });
 }
@@ -31,32 +24,33 @@ export const useRegister = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: async ({ name, email, password, role }: TAuth) => {
-      return await api.post('auth/register', { name, email, password, role })
-        .then((response) => response.data);
+    mutationFn: async (credentials: RegisterCredentials) => {
+      return await authService.register(credentials);
     },
     onSuccess: () => {
       navigate({ to: '/sign-in' });
     },
     onError: (error) => {
-      console.error(error);
+      console.error('Register error:', error);
     },
   });
 }
 
 export const useLogout = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      return await api.post('auth/logout')
-        .then((response) => response.data);
+      await logout();
     },
     onSuccess: () => {
+      queryClient.clear();
       navigate({ to: '/sign-in' });
     },
     onError: (error) => {
-      console.error(error);
+      console.error('Logout error:', error);
     },
   });
 }
@@ -64,8 +58,7 @@ export const useLogout = () => {
 export const useRefresh = () => {
   return useMutation({
     mutationFn: async () => {
-      return await api.post('auth/refresh-token')
-        .then((response) => response.data);
+      throw new Error("Refresh manual não implementado");
     },
     onError: (error) => {
       console.error(error);

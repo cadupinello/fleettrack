@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { createFileRoute } from '@tanstack/react-router';
+import { useAuth } from '@/context/authContext';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
   Badge,
   Calendar,
@@ -28,12 +29,18 @@ import {
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_app/trips')({
+  beforeLoad: ({ context }) => {
+    if (!context.authentication.hasRole(['ADMIN', 'MANAGER'])) {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
   component: TripsComponent,
 });
 
 function TripsComponent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { isAdmin } = useAuth();
 
   const trips = [
     {
@@ -135,10 +142,12 @@ function TripsComponent() {
             Gerencie todas as viagens e entregas
           </p>
         </div>
-        <Button>
-          <Package className="mr-2 h-4 w-4" />
-          Nova Viagem
-        </Button>
+        {isAdmin && (
+          <Button>
+            <Package className="mr-2 h-4 w-4" />
+            Nova Viagem
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
