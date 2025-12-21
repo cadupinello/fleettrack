@@ -14,11 +14,13 @@ import { Route as AppLayoutRouteImport } from './pages/_app/layout'
 import { Route as IndexRouteImport } from './pages/index'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
-import { Route as AppTripsRouteImport } from './pages/_app/trips'
 import { Route as AppMapsRouteImport } from './pages/_app/maps'
 import { Route as AppDriversRouteImport } from './pages/_app/drivers'
 import { Route as AppDashboardRouteImport } from './pages/_app/dashboard'
+import { Route as AppTripsLayoutRouteImport } from './pages/_app/trips/layout'
 import { Route as AppSettingsLayoutRouteImport } from './pages/_app/settings/layout'
+import { Route as AppTripsIndexRouteImport } from './pages/_app/trips/index'
+import { Route as AppTripsTripIdRouteImport } from './pages/_app/trips/$tripId'
 import { Route as AppSettingsProfileUserIdRouteImport } from './pages/_app/settings/profile.$userId'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
@@ -44,11 +46,6 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
-const AppTripsRoute = AppTripsRouteImport.update({
-  id: '/trips',
-  path: '/trips',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
 const AppMapsRoute = AppMapsRouteImport.update({
   id: '/maps',
   path: '/maps',
@@ -64,10 +61,25 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppTripsLayoutRoute = AppTripsLayoutRouteImport.update({
+  id: '/trips',
+  path: '/trips',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppSettingsLayoutRoute = AppSettingsLayoutRouteImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppTripsIndexRoute = AppTripsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTripsLayoutRoute,
+} as any)
+const AppTripsTripIdRoute = AppTripsTripIdRouteImport.update({
+  id: '/$tripId',
+  path: '/$tripId',
+  getParentRoute: () => AppTripsLayoutRoute,
 } as any)
 const AppSettingsProfileUserIdRoute =
   AppSettingsProfileUserIdRouteImport.update({
@@ -79,12 +91,14 @@ const AppSettingsProfileUserIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof AppSettingsLayoutRouteWithChildren
+  '/trips': typeof AppTripsLayoutRouteWithChildren
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
   '/maps': typeof AppMapsRoute
-  '/trips': typeof AppTripsRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/trips/$tripId': typeof AppTripsTripIdRoute
+  '/trips/': typeof AppTripsIndexRoute
   '/settings/profile/$userId': typeof AppSettingsProfileUserIdRoute
 }
 export interface FileRoutesByTo {
@@ -93,9 +107,10 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/drivers': typeof AppDriversRoute
   '/maps': typeof AppMapsRoute
-  '/trips': typeof AppTripsRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/trips/$tripId': typeof AppTripsTripIdRoute
+  '/trips': typeof AppTripsIndexRoute
   '/settings/profile/$userId': typeof AppSettingsProfileUserIdRoute
 }
 export interface FileRoutesById {
@@ -104,12 +119,14 @@ export interface FileRoutesById {
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
   '/_app/settings': typeof AppSettingsLayoutRouteWithChildren
+  '/_app/trips': typeof AppTripsLayoutRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/drivers': typeof AppDriversRoute
   '/_app/maps': typeof AppMapsRoute
-  '/_app/trips': typeof AppTripsRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
+  '/_app/trips/$tripId': typeof AppTripsTripIdRoute
+  '/_app/trips/': typeof AppTripsIndexRoute
   '/_app/settings/profile/$userId': typeof AppSettingsProfileUserIdRoute
 }
 export interface FileRouteTypes {
@@ -117,12 +134,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/trips'
     | '/dashboard'
     | '/drivers'
     | '/maps'
-    | '/trips'
     | '/sign-in'
     | '/sign-up'
+    | '/trips/$tripId'
+    | '/trips/'
     | '/settings/profile/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -131,9 +150,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/drivers'
     | '/maps'
-    | '/trips'
     | '/sign-in'
     | '/sign-up'
+    | '/trips/$tripId'
+    | '/trips'
     | '/settings/profile/$userId'
   id:
     | '__root__'
@@ -141,12 +161,14 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_auth'
     | '/_app/settings'
+    | '/_app/trips'
     | '/_app/dashboard'
     | '/_app/drivers'
     | '/_app/maps'
-    | '/_app/trips'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
+    | '/_app/trips/$tripId'
+    | '/_app/trips/'
     | '/_app/settings/profile/$userId'
   fileRoutesById: FileRoutesById
 }
@@ -193,13 +215,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
-    '/_app/trips': {
-      id: '/_app/trips'
-      path: '/trips'
-      fullPath: '/trips'
-      preLoaderRoute: typeof AppTripsRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
     '/_app/maps': {
       id: '/_app/maps'
       path: '/maps'
@@ -221,12 +236,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/trips': {
+      id: '/_app/trips'
+      path: '/trips'
+      fullPath: '/trips'
+      preLoaderRoute: typeof AppTripsLayoutRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsLayoutRouteImport
       parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/trips/': {
+      id: '/_app/trips/'
+      path: '/'
+      fullPath: '/trips/'
+      preLoaderRoute: typeof AppTripsIndexRouteImport
+      parentRoute: typeof AppTripsLayoutRoute
+    }
+    '/_app/trips/$tripId': {
+      id: '/_app/trips/$tripId'
+      path: '/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof AppTripsTripIdRouteImport
+      parentRoute: typeof AppTripsLayoutRoute
     }
     '/_app/settings/profile/$userId': {
       id: '/_app/settings/profile/$userId'
@@ -249,20 +285,34 @@ const AppSettingsLayoutRouteChildren: AppSettingsLayoutRouteChildren = {
 const AppSettingsLayoutRouteWithChildren =
   AppSettingsLayoutRoute._addFileChildren(AppSettingsLayoutRouteChildren)
 
+interface AppTripsLayoutRouteChildren {
+  AppTripsTripIdRoute: typeof AppTripsTripIdRoute
+  AppTripsIndexRoute: typeof AppTripsIndexRoute
+}
+
+const AppTripsLayoutRouteChildren: AppTripsLayoutRouteChildren = {
+  AppTripsTripIdRoute: AppTripsTripIdRoute,
+  AppTripsIndexRoute: AppTripsIndexRoute,
+}
+
+const AppTripsLayoutRouteWithChildren = AppTripsLayoutRoute._addFileChildren(
+  AppTripsLayoutRouteChildren,
+)
+
 interface AppLayoutRouteChildren {
   AppSettingsLayoutRoute: typeof AppSettingsLayoutRouteWithChildren
+  AppTripsLayoutRoute: typeof AppTripsLayoutRouteWithChildren
   AppDashboardRoute: typeof AppDashboardRoute
   AppDriversRoute: typeof AppDriversRoute
   AppMapsRoute: typeof AppMapsRoute
-  AppTripsRoute: typeof AppTripsRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppSettingsLayoutRoute: AppSettingsLayoutRouteWithChildren,
+  AppTripsLayoutRoute: AppTripsLayoutRouteWithChildren,
   AppDashboardRoute: AppDashboardRoute,
   AppDriversRoute: AppDriversRoute,
   AppMapsRoute: AppMapsRoute,
-  AppTripsRoute: AppTripsRoute,
 }
 
 const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
