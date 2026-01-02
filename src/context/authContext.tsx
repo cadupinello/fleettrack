@@ -6,13 +6,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { destroyCookie, setCookie } from 'nookies';
 import { createContext, useCallback, useContext } from 'react';
 
-export type AppRole = 'ADMIN' | 'MANAGER' | 'USER';
+export type AppRole = 'ADMIN' | 'MANAGER' | 'DRIVER' | 'USER';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: AppRole;
+  driverId?: string;
 }
 
 export type IUser = User;

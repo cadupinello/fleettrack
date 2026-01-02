@@ -4,7 +4,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER';
+  role: 'ADMIN' | 'MANAGER' | 'DRIVER' | 'USER';
+  driverId?: string;
 }
 
 export interface LoginCredentials {

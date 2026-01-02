@@ -1,8 +1,11 @@
-import { useGetTripById } from '@/api/queries/trips';
+import { useGetTripById } from '@/api/queries/trip';
+import { TripLiveBadge } from '@/components/trip/TripLiveBadge';
+import { TripProgress } from '@/components/trip/TripProgress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTripLiveProgress } from '@/hooks/useTripSocket';
+import type { TripStatus } from '@/types/trip';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Calendar, ChevronLeft, Clock, Map as MapIcon, MapPin, Package, ShieldCheck, Truck, User } from 'lucide-react';
 
@@ -10,14 +13,14 @@ export const Route = createFileRoute('/_app/trips/$tripId')({
   component: TripDetailsPage,
 });
 
-const statusColors = {
+const statusColors: Record<TripStatus, string> = {
   PLANNED: 'bg-slate-500',
   IN_PROGRESS: 'bg-blue-500',
   COMPLETED: 'bg-green-500',
   CANCELLED: 'bg-red-500',
 };
 
-const statusLabels = {
+const statusLabels: Record<TripStatus, string> = {
   PLANNED: 'Planejada',
   IN_PROGRESS: 'Em Andamento',
   COMPLETED: 'Concluída',
@@ -26,7 +29,9 @@ const statusLabels = {
 
 function TripDetailsPage() {
   const { tripId } = Route.useParams();
+  console.log(tripId);
   const { trip, isLoading, isError } = useGetTripById(tripId);
+  const { isLive } = useTripLiveProgress(tripId);
 
   if (isLoading) {
     return (
@@ -46,6 +51,7 @@ function TripDetailsPage() {
   }
 
   if (isError || !trip) {
+    console.log(trip);
     return (
       <div className="py-20 text-center">
         <h2 className="text-2xl font-bold mb-4">Viagem não encontrada</h2>
@@ -58,23 +64,27 @@ function TripDetailsPage() {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link to="/trips">
-            <ChevronLeft className="h-6 w-6" />
-          </Link>
-        </Button>
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h2 className="text-3xl font-bold tracking-tight">Viagem #{trip.code}</h2>
-            <Badge className={`${statusColors[trip.status]} text-white border-none shadow-sm capitalize`}>
-              {statusLabels[trip.status]}
-            </Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link to="/trips">
+              <ChevronLeft className="h-6 w-6" />
+            </Link>
+          </Button>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-3xl font-bold tracking-tight">Viagem #{trip.code}</h2>
+              <Badge className={`${statusColors[trip.status as TripStatus]} text-white border-none shadow-sm capitalize`}>
+                {statusLabels[trip.status as TripStatus]}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground flex items-center gap-2 text-sm">
+              ID Externo: <span className="font-mono text-xs">{trip.id}</span>
+            </p>
           </div>
-          <p className="text-muted-foreground flex items-center gap-2 text-sm">
-            ID Externo: <span className="font-mono text-xs">{trip.id}</span>
-          </p>
         </div>
+
+        <TripLiveBadge isLive={isLive} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -87,7 +97,11 @@ function TripDetailsPage() {
               </div>
               <div>
                 <p className="font-bold text-lg">Visualização do Mapa</p>
-                <p className="text-muted-foreground text-sm">O rastreamento em tempo real estará disponível em breve.</p>
+                <p className="text-muted-foreground text-sm">
+                  {isLive 
+                    ? "Rastreamento em tempo real ativo." 
+                    : "O rastreamento em tempo real estará disponível em breve."}
+                </p>
               </div>
             </div>
           </div>
@@ -139,16 +153,12 @@ function TripDetailsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 className="font-bold text-primary flex items-center justify-between">
-              Progresso
-              <span>{trip.progress}%</span>
-            </h3>
-            <Progress value={trip.progress} className="h-3 bg-primary/20" />
-            <div className="flex items-center gap-4 pt-2">
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 shadow-sm">
+            <TripProgress value={trip.progress} label="Progresso" />
+            <div className="flex items-center gap-4 pt-6 mt-4 border-t border-primary/10">
                <div className="flex-1 space-y-1">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Status Atual</p>
-                  <p className="text-sm font-bold">{statusLabels[trip.status]}</p>
+                  <p className="text-sm font-bold">{statusLabels[trip.status as TripStatus]}</p>
                </div>
                <div className="flex-1 space-y-1">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground">Iniciado em</p>

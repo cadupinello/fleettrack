@@ -1,5 +1,7 @@
-import { useGetTrips } from '@/api/queries/trips';
-import type { TripStatus } from '@/types/trip';
+import { useGetTrips } from '@/api/queries/trip';
+import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { useTripsWebSocket } from '@/hooks/useTripsWebSocket';
+import type { Trip, TripStatus } from '@/types/trip';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { TripsFilters } from './components/TripsFilters';
@@ -10,11 +12,13 @@ export const Route = createFileRoute('/_app/trips/')({
 });
 
 function TripsIndexPage() {
+  useTripsWebSocket();
+  useDriverLocation();
   const { trips, isLoading, isError, refetch } = useGetTrips();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TripStatus | 'all'>('all');
 
-  const filteredTrips = trips.filter((trip) => {
+  const filteredTrips = trips.filter((trip: Trip) => {
     const matchesSearch = 
       trip.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       trip.driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,7 +30,7 @@ function TripsIndexPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <TripsFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
